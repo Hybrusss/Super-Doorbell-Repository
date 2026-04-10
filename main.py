@@ -65,6 +65,9 @@ class Button:
         self.text = text
         self.pressed = False
 
+        self.fit_text()
+
+
     @property
     def position(self) -> tuple[int, int]:
         return self._position
@@ -106,6 +109,27 @@ class Button:
     @text.setter
     def text(self, value: str) -> None:
         self._text = value
+    
+    def fit_text(self, font_size: int = 32, buffer_size: int = 20):
+    
+        text_color = brighten_color(self.color)
+        
+        self.font = pygame.font.Font('freesansbold.ttf', font_size)
+        text = self.font.render(self.text, True, text_color) 
+        textRect = text.get_rect()
+
+        while textRect.width > self.size[0] - buffer_size or textRect.height > self.size[1] - buffer_size:
+            font_size -= 1
+            self.font = pygame.font.Font('freesansbold.ttf', font_size)
+            text = self.font.render(self.text, True, text_color) 
+            textRect = text.get_rect()
+
+        while textRect.width < self.size[0] - buffer_size and textRect.height < self.size[1] - buffer_size:
+            font_size += 1
+            self.font = pygame.font.Font('freesansbold.ttf', font_size)
+            text = self.font.render(self.text, True, text_color) 
+            textRect = text.get_rect()
+        
     
     def draw(self, display: pygame.Surface = None) -> None:
         if not self.pressed:
@@ -152,25 +176,27 @@ class Button:
 
         text_color = brighten_color(self.color)
 
+        text = self.font.render(self.text, True, text_color) 
+        textRect = text.get_rect()
 
-        text = font.render(self.text, True, text_color) # create font surface object (text, antialias, stroke, background)
-        textRect = text.get_rect() # get the rectangle around the text
+        print(textRect)
+
         text_center = (button_rect[0] + self.size[0]//2, button_rect[1] + self.size[1]//2)
 
         if outline:
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if (dx, dy) != (0, 0):
-                        text_outline = font.render(self.text, True, black) # create font surface object (text, antialias, stroke, background)
-                        textRect_outline = text_outline.get_rect() # get the rectangle around the text
+                        text_outline = self.font.render(self.text, True, black)
+                        textRect_outline = text_outline.get_rect()
                         
                         temp_center = (text_center[0] + dx * outline_thickness, text_center[1] + dy * outline_thickness)
 
-                        textRect_outline.center = temp_center # set the center to the width/2 and the height/2, will appear in top left
-                        screen.blit(text_outline, textRect_outline) # draw the text to the screen on its rectangle
+                        textRect_outline.center = temp_center
+                        screen.blit(text_outline, textRect_outline)
         
-        textRect.center = text_center # set the center to the width/2 and the height/2, will appear in top left
-        screen.blit(text, textRect) # draw the text to the screen on its rectangle
+        textRect.center = text_center
+        screen.blit(text, textRect) 
         
 
     def click_check(self, position: tuple[int, int], down_click: bool) -> bool:
@@ -239,7 +265,8 @@ for i in range(5):
     g = random.randrange(0, 256)
     b = random.randrange(0, 256)
 
-    button_list.append(Button((x, y), (100, 100), screen, (r, g, b), "abc"))
+    button_list.append(Button((x, y), (100, 100), screen, (r, g, b), "A"))
+    button_list.append(Button((x+100, y+100), (300, 100), screen, (r, g, b), "aouwfhwaoawfuigahifwgawffbiawuf"))
 
 button_set = ButtonSet(screen)
 
