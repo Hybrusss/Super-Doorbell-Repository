@@ -2,6 +2,18 @@ import pygame # main import
 import os # for offsetting window open position
 from collections.abc import Callable
 import random
+import ctypes
+
+# Tell Windows your app is DPI aware to prevent double-scaling
+try:
+    ctypes.windll.user32.SetProcessDPIAware()
+except AttributeError:
+    pass # Non-Windows platforms or older Windows versions
+
+# text = font.render('Example Text Here', True, black, green) # create font surface object (text, antialias, stroke, background)
+# textRect = text.get_rect() # get the rectangle around the text
+# textRect.center = (textRect.width//2, textRect.height//2) # set the center to the width/2 and the height/2, will appear in top left
+# screen.blit(text, textRect) # draw the text to the screen on its rectangle
 
 os.system('cls') # clears the terminal
 
@@ -14,8 +26,11 @@ red = (255, 0, 0)
 green = (0, 255, 0)
 blue = (0, 0, 255)
 
+
+info = pygame.display.Info()
+
 # Screen width and height
-width, height = 1920, 1080
+width, height = info.current_w, info.current_h
 
 # x and y offset of window open position
 xOffset, yOffset = 0, 0
@@ -31,18 +46,23 @@ Running = True # set variable for stopping the loop
 def darken_color(input_color: tuple[int, int, int]) -> tuple[int, int, int]:
     return tuple([x * 0.5 for x in input_color])
 
+def brighten_color(input_color: tuple[int, int, int]) -> tuple[int, int, int]:
+    return tuple([min(255, x * 2) for x in input_color])
+
 class Button:
 
     def __init__(self, 
                     position: tuple[int, int], 
                     size: tuple[int, int], 
                     display: pygame.Surface, 
-                    color: tuple[int, int, int]) -> None:
+                    color: tuple[int, int, int],
+                    text: str) -> None:
         
         self.position = position
         self.size = size
         self.display = display
         self.color = color
+        self.text = text
         self.pressed = False
 
     @property
@@ -79,6 +99,14 @@ class Button:
     def color(self, value: tuple[int, int, int]) -> None:
         self._color = value
     
+    @property
+    def text(self) -> str:
+        return self._text
+
+    @text.setter
+    def text(self, value: str) -> None:
+        self._text = value
+    
     def draw(self, display: pygame.Surface = None) -> None:
         if not self.pressed:
             the_rect = self.position + self.size
@@ -86,6 +114,7 @@ class Button:
             the_rect = (self.position[0], self.position[1]+10) + self.size
 
         the_rect_bottom = (self.position[0], self.position[1]+20) + self.size
+
 
         if display is None:
             display = self.display
@@ -115,7 +144,35 @@ class Button:
                             the_rect,
                             width = 5,
                             border_radius = 15)
-            
+        
+        self.draw_button_text(the_rect, True, 2)
+        
+
+    def draw_button_text(self, button_rect: tuple[int, int], outline: bool = False, outline_thickness: int = 1):
+
+        text_color = brighten_color(self.color)
+
+
+        text = font.render(self.text, True, text_color) # create font surface object (text, antialias, stroke, background)
+        textRect = text.get_rect() # get the rectangle around the text
+        text_center = (button_rect[0] + self.size[0]//2, button_rect[1] + self.size[1]//2)
+
+        if outline:
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+                    if (dx, dy) != (0, 0):
+                        text_outline = font.render(self.text, True, black) # create font surface object (text, antialias, stroke, background)
+                        textRect_outline = text_outline.get_rect() # get the rectangle around the text
+                        
+                        temp_center = (text_center[0] + dx * outline_thickness, text_center[1] + dy * outline_thickness)
+
+                        textRect_outline.center = temp_center # set the center to the width/2 and the height/2, will appear in top left
+                        screen.blit(text_outline, textRect_outline) # draw the text to the screen on its rectangle
+        
+        textRect.center = text_center # set the center to the width/2 and the height/2, will appear in top left
+        screen.blit(text, textRect) # draw the text to the screen on its rectangle
+        
+
     def click_check(self, position: tuple[int, int], down_click: bool) -> bool:
         if down_click:
             if self.position[0] < position[0] < self.position[0] + self.size[0]:
@@ -175,14 +232,14 @@ class ButtonSet:
 button_list = []
 
 for i in range(5):
-    x = random.randrange(150, 1770)
-    y = random.randrange(150, 930)
+    x = random.randrange(150, width-150)
+    y = random.randrange(150, height-150)
 
     r = random.randrange(0, 256)
     g = random.randrange(0, 256)
     b = random.randrange(0, 256)
 
-    button_list.append(Button((x, y), (100, 100), screen, (r, g, b)))
+    button_list.append(Button((x, y), (100, 100), screen, (r, g, b), "abc"))
 
 button_set = ButtonSet(screen)
 
@@ -198,11 +255,6 @@ while Running: # start the loop
     screen.fill(grey)
     
     button_set.draw()
-    
-    # text = font.render('Example Text Here', True, black, green) # create font surface object (text, antialias, stroke, background)
-    # textRect = text.get_rect() # get the rectangle around the text
-    # textRect.center = (textRect.width//2, textRect.height//2) # set the center to the width/2 and the height/2, will appear in top left
-    # screen.blit(text, textRect) # draw the text to the screen on its rectangle
 
     pygame.display.update() # update the frame of the display object
     
