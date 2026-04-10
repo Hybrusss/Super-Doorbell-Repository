@@ -2,7 +2,18 @@ import pygame # main import
 import os # for offsetting window open position
 from collections.abc import Callable
 import random
+import time
 import ctypes
+
+from tkinter import filedialog, Tk
+
+# Hide the main Tkinter window
+root = Tk()
+root.withdraw()
+
+def get_file_path():
+    file_path = filedialog.askopenfilename()
+    return file_path
 
 # Tell Windows your app is DPI aware to prevent double-scaling
 try:
@@ -252,26 +263,28 @@ class ButtonSet:
                 func()
 
 
-    
 
 
 button_list = []
 
-for i in range(5):
-    x = random.randrange(150, width-150)
-    y = random.randrange(150, height-150)
+button_symbols = [1, 2, 3, 4, 5, 6, 7, 8, 9, "«", 0, "OK"]
+button_symbols = [str(x) for x in button_symbols]
+symbol_idx = 0
 
-    r = random.randrange(0, 256)
-    g = random.randrange(0, 256)
-    b = random.randrange(0, 256)
 
-    button_list.append(Button((x, y), (100, 100), screen, (r, g, b), "A"))
-    button_list.append(Button((x+100, y+100), (300, 100), screen, (r, g, b), "aouwfhwaoawfuigahifwgawffbiawuf"))
+for y in range(4):
+    for x in range(3):
+        button_list.append(Button(((x+1)*120, (y+1)*140), (100, 100), screen, red, button_symbols[symbol_idx]))
+        symbol_idx += 1
+
+get_file_button = Button((50, 50), (100, 100), screen, red, "open file")
 
 button_set = ButtonSet(screen)
 
 def placeholder():
     pass
+
+button_set.add_button(get_file_button, get_file_path)
 
 for button in button_list:
     button_set.add_button(button, placeholder)
