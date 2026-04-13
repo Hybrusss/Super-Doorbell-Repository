@@ -4,6 +4,7 @@ from collections.abc import Callable
 import random
 import time
 import ctypes
+from playsound import playsound
 
 from tkinter import filedialog, Tk
 
@@ -11,9 +12,12 @@ from tkinter import filedialog, Tk
 root = Tk()
 root.withdraw()
 
+the_sound_path = ""
+
 def get_file_path():
-    file_path = filedialog.askopenfilename()
-    return file_path
+    global the_sound_path
+    file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\temp sounds")
+    the_sound_path = file_path
 
 # Tell Windows your app is DPI aware to prevent double-scaling
 try:
@@ -54,6 +58,8 @@ font = pygame.font.Font('freesansbold.ttf', 32) # create font - (font, fontsize)
 
 Running = True # set variable for stopping the loop
 
+current_text = []
+
 def darken_color(input_color: tuple[int, int, int]) -> tuple[int, int, int]:
     return tuple([x * 0.5 for x in input_color])
 
@@ -67,12 +73,14 @@ class Button:
                     size: tuple[int, int], 
                     display: pygame.Surface, 
                     color: tuple[int, int, int],
-                    text: str) -> None:
+                    text: str,
+                    text_color: tuple[int, int, int]) -> None:
         
         self.position = position
         self.size = size
         self.display = display
         self.color = color
+        self.text_color = text_color
         self.text = text
         self.pressed = False
 
@@ -123,22 +131,20 @@ class Button:
     
     def fit_text(self, font_size: int = 32, buffer_size: int = 20):
     
-        text_color = brighten_color(self.color)
-        
         self.font = pygame.font.Font('freesansbold.ttf', font_size)
-        text = self.font.render(self.text, True, text_color) 
+        text = self.font.render(self.text, True, self.text_color) 
         textRect = text.get_rect()
 
         while textRect.width > self.size[0] - buffer_size or textRect.height > self.size[1] - buffer_size:
             font_size -= 1
             self.font = pygame.font.Font('freesansbold.ttf', font_size)
-            text = self.font.render(self.text, True, text_color) 
+            text = self.font.render(self.text, True, self.text_color) 
             textRect = text.get_rect()
 
         while textRect.width < self.size[0] - buffer_size and textRect.height < self.size[1] - buffer_size:
             font_size += 1
             self.font = pygame.font.Font('freesansbold.ttf', font_size)
-            text = self.font.render(self.text, True, text_color) 
+            text = self.font.render(self.text, True, self.text_color) 
             textRect = text.get_rect()
         
     
@@ -185,12 +191,9 @@ class Button:
 
     def draw_button_text(self, button_rect: tuple[int, int], outline: bool = False, outline_thickness: int = 1):
 
-        text_color = brighten_color(self.color)
 
-        text = self.font.render(self.text, True, text_color) 
+        text = self.font.render(self.text, True, self.text_color) 
         textRect = text.get_rect()
-
-        print(textRect)
 
         text_center = (button_rect[0] + self.size[0]//2, button_rect[1] + self.size[1]//2)
 
@@ -265,7 +268,7 @@ class ButtonSet:
 
 
 
-button_list = []
+button_list: list[Button] = []
 
 button_symbols = [1, 2, 3, 4, 5, 6, 7, 8, 9, "«", 0, "OK"]
 button_symbols = [str(x) for x in button_symbols]
@@ -274,20 +277,43 @@ symbol_idx = 0
 
 for y in range(4):
     for x in range(3):
-        button_list.append(Button(((x+1)*120, (y+1)*140), (100, 100), screen, red, button_symbols[symbol_idx]))
+        button_list.append(Button(((x+1)*120, (y+1)*140), (100, 100), screen, red, button_symbols[symbol_idx], red))
         symbol_idx += 1
 
-get_file_button = Button((50, 50), (100, 100), screen, red, "open file")
+get_file_button = Button((600, 800), (100, 100), screen, red, "open file", red)
 
 button_set = ButtonSet(screen)
+
+text_button = Button((600, 400), (700, 100), screen, black, "", green)
+sound_button = Button((600, 600), (100, 100), screen, red, "Play Sound", red)
+
+def play_sound():
+    playsound(the_sound_path)
+
+def type_number_contructor(input: str):
+    if input == "«":
+        def type_number():
+            text_button.text = text_button.text[:-1]
+    elif input == "OK":
+        def type_number():
+            text_button.text = ""
+    else:
+        def type_number():
+            text_button.text += input
+    
+    return type_number
+
 
 def placeholder():
     pass
 
 button_set.add_button(get_file_button, get_file_path)
+button_set.add_button(sound_button, play_sound)
 
 for button in button_list:
-    button_set.add_button(button, placeholder)
+    button_set.add_button(button, type_number_contructor(button.text))
+
+button_set.add_button(text_button, text_button.text)
 
 
 while Running: # start the loop
