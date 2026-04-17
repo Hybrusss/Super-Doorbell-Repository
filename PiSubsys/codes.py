@@ -71,8 +71,14 @@ class code:
 			file = str(contents[startIdx:index], "ASCII")
 
 			codes.append(code(val, file))
+			print(val)
+			print(file)
 			codeCount -= 1
 
 
 		fileHandle.close()
 		return
+
+# Tests
+code.createFileFromList("testFile.set", [code(1234, "file.ogg"), code(4321, "honk.ogg")])
+code.createListFromFile("testFile.set")
