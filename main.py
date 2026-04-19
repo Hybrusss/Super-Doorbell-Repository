@@ -5,6 +5,7 @@ import random
 import time
 import ctypes
 from playsound import playsound
+import threading
 
 from tkinter import filedialog, Tk
 
@@ -14,10 +15,18 @@ root.withdraw()
 
 the_sound_path = ""
 
+def play_sound():
+    sound_thread = threading.Thread(target=playsound, args=(the_sound_path,))
+    sound_thread.start()
+    
+def empty_function():
+    pass
+
 def get_file_path():
     global the_sound_path
     file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\temp sounds")
     the_sound_path = file_path
+    # playsound(the_sound_path)
 
 # Tell Windows your app is DPI aware to prevent double-scaling
 try:
@@ -84,6 +93,8 @@ class Button:
         self.text = text
         self.pressed = False
 
+        self.parent_container = None
+
         self.fit_text()
 
 
@@ -129,7 +140,10 @@ class Button:
     def text(self, value: str) -> None:
         self._text = value
     
-    def fit_text(self, font_size: int = 32, buffer_size: int = 20):
+    def set_parent(self, value) -> None:
+        self.parent_container = value
+    
+    def fit_text(self, font_size: int = 32, buffer_size: int = 40):
     
         self.font = pygame.font.Font('freesansbold.ttf', font_size)
         text = self.font.render(self.text, True, self.text_color) 
@@ -197,7 +211,7 @@ class Button:
 
         text_center = (button_rect[0] + self.size[0]//2, button_rect[1] + self.size[1]//2)
 
-        if outline:
+        if outline and self.text_color != black:
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if (dx, dy) != (0, 0):
@@ -215,17 +229,20 @@ class Button:
 
     def click_check(self, position: tuple[int, int], down_click: bool) -> bool:
         if down_click:
-            if self.position[0] < position[0] < self.position[0] + self.size[0]:
-                if self.position[1] < position[1] < self.position[1] + self.size[1]:
-                    self.pressed = True
-                    return True
-            self.pressed = False
-            return False
-        else:
-            self.pressed = False
-            return False
+            if self.parent_container == container_dict[current_container]:
+                if self.position[0] < position[0] < self.position[0] + self.size[0]:
+                    if self.position[1] < position[1] < self.position[1] + self.size[1]:
+                        self.pressed = True
+                        return True
+        self.pressed = False
+        return False
 
-class ButtonSet:
+
+# effectively a different "screen",
+# holds different buttons and can be
+# switched between by pressing certain
+# buttons
+class Container:
     
     def __init__(self, display: pygame.Surface) -> None:
         self.buttons = {}
@@ -251,6 +268,7 @@ class ButtonSet:
     
     def add_button(self, button: Button, trigger: Callable) -> None:
         self.buttons[button] = trigger
+        button.set_parent(self)
     
     def draw(self, display: pygame.Surface = None) -> None:
         if display is None:
@@ -264,31 +282,25 @@ class ButtonSet:
         for button, func in self.buttons.items():
             if button.click_check(position, down_click):
                 func()
+                button.click_check(position, down_click)
 
 
+def make_keypad():
+
+    button_list: list[Button] = []
+
+    button_symbols = [1, 2, 3, 4, 5, 6, 7, 8, 9, "«", 0, "OK"]
+    button_symbols = [str(x) for x in button_symbols]
+    symbol_idx = 0
 
 
-button_list: list[Button] = []
+    for y in range(4):
+        for x in range(3):
+            button_list.append(Button(((x+1)*120, (y+1)*140), (100, 100), screen, red, button_symbols[symbol_idx], red))
+            symbol_idx += 1
+    
+    return button_list
 
-button_symbols = [1, 2, 3, 4, 5, 6, 7, 8, 9, "«", 0, "OK"]
-button_symbols = [str(x) for x in button_symbols]
-symbol_idx = 0
-
-
-for y in range(4):
-    for x in range(3):
-        button_list.append(Button(((x+1)*120, (y+1)*140), (100, 100), screen, red, button_symbols[symbol_idx], red))
-        symbol_idx += 1
-
-get_file_button = Button((600, 800), (100, 100), screen, red, "open file", red)
-
-button_set = ButtonSet(screen)
-
-text_button = Button((600, 400), (700, 100), screen, black, "", green)
-sound_button = Button((600, 600), (100, 100), screen, red, "Play Sound", red)
-
-def play_sound():
-    playsound(the_sound_path)
 
 def type_number_contructor(input: str):
     if input == "«":
@@ -304,23 +316,67 @@ def type_number_contructor(input: str):
     return type_number
 
 
-def placeholder():
-    pass
+def swap_container_contstructor(new_container_name):
 
-button_set.add_button(get_file_button, get_file_path)
-button_set.add_button(sound_button, play_sound)
+    def output_func():
+        global current_container
+        current_container = new_container_name
+    
+    return output_func
 
-for button in button_list:
-    button_set.add_button(button, type_number_contructor(button.text))
 
-button_set.add_button(text_button, text_button.text)
+# will hold all of the separate Containers
+# to be switched between
+container_dict = {}
+
+current_container = "title"
+
+# make the testing buttons screen
+testing_buttons = Container(screen)
+
+for button in make_keypad():
+    testing_buttons.add_button(button, type_number_contructor(button.text))
+
+get_file_button = Button((600, 800), (100, 100), screen, red, "open file", red)
+text_button = Button((600, 400), (700, 100), screen, black, "", green)
+sound_button = Button((600, 600), (100, 100), screen, red, "Play Sound", red)
+
+testing_buttons.add_button(get_file_button, get_file_path)
+testing_buttons.add_button(sound_button, play_sound)
+testing_buttons.add_button(text_button, text_button.text)
+
+container_dict["testing"] = testing_buttons
+
+
+# will be the first screen that greets the user
+title_screen = Container(screen)
+
+# this button will be part of the connection process
+connect_button = Button((width/2-250, height/2-150), (500, 100), screen, red, "Connect to doorbell", black)
+
+# this button will allow users to edit doorbell settings prior to
+# connecting to their doorbell
+edit_button = Button((width/2-250, height/2+50), (500, 100), screen, red, "Edit offline", black)
+
+title_screen.add_button(connect_button, empty_function)
+title_screen.add_button(edit_button, swap_container_contstructor("edit"))
+
+container_dict["title"] = title_screen
+
+edit_screen = Container(screen)
+
+back_button = Button((50, 50), (100, 100), screen, green, "back", black)
+
+edit_screen.add_button(back_button, swap_container_contstructor("title"))
+
+container_dict["edit"] = edit_screen
 
 
 while Running: # start the loop
 
     screen.fill(grey)
     
-    button_set.draw()
+    container_dict[current_container].draw()
 
     pygame.display.update() # update the frame of the display object
     
@@ -334,9 +390,9 @@ while Running: # start the loop
         
         # checks for left click down
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            button_set.click_check(pygame.mouse.get_pos(), True)
+            container_dict[current_container].click_check(pygame.mouse.get_pos(), True)
 
         # checks for left click up
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            button_set.click_check(pygame.mouse.get_pos(), False)
+            container_dict[current_container].click_check(pygame.mouse.get_pos(), False)
 
