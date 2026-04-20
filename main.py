@@ -46,9 +46,10 @@ pygame.init() # initializing for other things incase they are needed
 black = (0,0,0)
 white = (255, 255, 255)
 grey = (128, 128, 128)
-red = (255, 0, 0)
-green = (0, 255, 0)
-blue = (0, 0, 255)
+red = (255, 64, 64)
+green = (64, 255, 64)
+blue = (64, 64, 255)
+purple = (128, 64, 255)
 
 
 info = pygame.display.Info()
@@ -91,8 +92,9 @@ class Button:
         self.color = color
         self.text_color = text_color
         self.text = text
-        self.pressed = False
 
+        self.pressed = False
+        self.clickable = True
         self.parent_container = None
 
         self.fit_text()
@@ -142,6 +144,9 @@ class Button:
     
     def set_parent(self, value) -> None:
         self.parent_container = value
+    
+    def set_clickable(self, value) -> None:
+        self.clickable = value
     
     def fit_text(self, font_size: int = 32, buffer_size: int = 40):
     
@@ -228,7 +233,7 @@ class Button:
         
 
     def click_check(self, position: tuple[int, int], down_click: bool) -> bool:
-        if down_click:
+        if down_click and self.clickable:
             if self.parent_container == container_dict[current_container]:
                 if self.position[0] < position[0] < self.position[0] + self.size[0]:
                     if self.position[1] < position[1] < self.position[1] + self.size[1]:
@@ -331,6 +336,8 @@ container_dict = {}
 
 current_container = "title"
 
+
+
 # make the testing buttons screen
 testing_buttons = Container(screen)
 
@@ -348,6 +355,7 @@ testing_buttons.add_button(text_button, text_button.text)
 container_dict["testing"] = testing_buttons
 
 
+
 # will be the first screen that greets the user
 title_screen = Container(screen)
 
@@ -363,11 +371,45 @@ title_screen.add_button(edit_button, swap_container_contstructor("edit"))
 
 container_dict["title"] = title_screen
 
+
+
 edit_screen = Container(screen)
 
-back_button = Button((50, 50), (100, 100), screen, green, "back", black)
+back_button = Button((5, 5), (100, 75), screen, red, "back", black)
+new_code_button = Button((width/2-150, 350), (300, 100), screen, black, "Add Code", white)
+edit_button = Button((1325, 115), (200, 100), screen, green, "Edit Code", white)
+delete_code_button = Button((1575, 115), (200, 100), screen, red, "Delete Code", white)
+upload_codes_button = Button((width-350, height-150), (300, 100), screen, purple, "Upload Code", white)
+import_codes_button = Button((50, height-150), (300, 100), screen, blue, "Import Code", white)
+export_codes_button = Button((width/2-150, height-150), (300, 100), screen, white, "Export Code", black)
+
+data_background = Button((100, 100), (1100, 150), screen, grey, "", black)
+edit_background = Button((1300, 100), (500, 150), screen, grey, "", black)
+name_display = Button((125, 115), (250, 100), screen, black, "Name", white)
+code_display = Button((525, 115), (250, 100), screen, black, "Code", white)
+sound_display = Button((925, 115), (250, 100), screen, black, "Sound", white)
+
+data_background.set_clickable(False)
+edit_background.set_clickable(False)
+name_display.set_clickable(False)
+code_display.set_clickable(False)
+sound_display.set_clickable(False)
 
 edit_screen.add_button(back_button, swap_container_contstructor("title"))
+edit_screen.add_button(new_code_button, empty_function)
+edit_screen.add_button(upload_codes_button, empty_function)
+edit_screen.add_button(import_codes_button, empty_function)
+edit_screen.add_button(export_codes_button, empty_function)
+
+edit_screen.add_button(data_background, empty_function)
+edit_screen.add_button(name_display, empty_function)
+edit_screen.add_button(code_display, empty_function)
+edit_screen.add_button(sound_display, empty_function)
+
+edit_screen.add_button(edit_background, empty_function)
+edit_screen.add_button(edit_button, empty_function)
+edit_screen.add_button(delete_code_button, empty_function)
+
 
 container_dict["edit"] = edit_screen
 
