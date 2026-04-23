@@ -4,7 +4,7 @@ from collections.abc import Callable
 import random
 import time
 import ctypes
-from playsound import playsound
+# from playsound import playsound
 import threading
 
 from tkinter import filedialog, Tk
@@ -16,10 +16,14 @@ root.withdraw()
 the_sound_path = ""
 
 def play_sound():
-    sound_thread = threading.Thread(target=playsound, args=(the_sound_path,))
-    sound_thread.start()
+    pass
+#     sound_thread = threading.Thread(target=playsound, args=(the_sound_path,))
+#     sound_thread.start()
     
 def empty_function():
+    pass
+
+def connect_function():
     pass
 
 def get_file_path():
@@ -46,6 +50,7 @@ pygame.init() # initializing for other things incase they are needed
 black = (0,0,0)
 white = (255, 255, 255)
 grey = (128, 128, 128)
+dark_grey = (92, 92, 92)
 red = (255, 64, 64)
 green = (64, 255, 64)
 blue = (64, 64, 255)
@@ -383,8 +388,8 @@ upload_codes_button = Button((width-350, height-150), (300, 100), screen, purple
 import_codes_button = Button((50, height-150), (300, 100), screen, blue, "Import Code", white)
 export_codes_button = Button((width/2-150, height-150), (300, 100), screen, white, "Export Code", black)
 
-data_background = Button((100, 100), (1100, 150), screen, grey, "", black)
-edit_background = Button((1300, 100), (500, 150), screen, grey, "", black)
+data_background = Button((100, 100), (1100, 150), screen, dark_grey, "", black)
+edit_background = Button((1300, 100), (500, 150), screen, dark_grey, "", black)
 name_display = Button((125, 115), (250, 100), screen, black, "Name", white)
 code_display = Button((525, 115), (250, 100), screen, black, "Code", white)
 sound_display = Button((925, 115), (250, 100), screen, black, "Sound", white)
@@ -407,11 +412,30 @@ edit_screen.add_button(code_display, empty_function)
 edit_screen.add_button(sound_display, empty_function)
 
 edit_screen.add_button(edit_background, empty_function)
-edit_screen.add_button(edit_button, empty_function)
+edit_screen.add_button(edit_button, swap_container_contstructor("editor"))
 edit_screen.add_button(delete_code_button, empty_function)
 
-
 container_dict["edit"] = edit_screen
+
+
+
+code_editor_screen = Container(screen)
+
+editor_background = Button((width/2-400, 100), (800, height-200), screen, dark_grey, "", black)
+
+upload_codes_button = Button((width-350, height-150), (300, 100), screen, purple, "Upload Code", white)
+import_codes_button = Button((50, height-150), (300, 100), screen, blue, "Import Code", white)
+export_codes_button = Button((width/2-150, height-150), (300, 100), screen, white, "Export Code", black)
+
+code_editor_screen.add_button(editor_background, empty_function)
+
+
+container_dict["editor"] = code_editor_screen
+
+
+
+
+
 
 
 while Running: # start the loop
@@ -438,3 +462,5 @@ while Running: # start the loop
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             container_dict[current_container].click_check(pygame.mouse.get_pos(), False)
 
+
+print(os.name)
