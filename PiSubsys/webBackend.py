@@ -1,7 +1,7 @@
 import threading
 import socket
 import time
-from rqPacket import rqPacket
+
 
 bcThr = None
 wsThr = None
@@ -9,6 +9,44 @@ wsThr = None
 UDP_PORT = 8002
 RTS_PORT = 8001
 PACKET_MAX = 10485760
+
+class rqPacket:
+	def __init__(self, data:bytes):
+		self.backingData = data
+
+	@property
+	def kind(self) -> int:
+		return int.from_bytes(self._data[0:4])
+	
+	@kind.setter
+	def kind(self, val:int):
+		newBytes = val.to_bytes(4)
+		self._data = bytes(newBytes + self._data[12:self.size])
+
+	@property
+	def size(self) -> int:
+		return 12 - int.from_bytes(self._data[4:12])
+	
+	@size.setter
+	def size(self, val:int):
+		newBytes = (12 + val).to_bytes(8)
+		self._data = bytes(self._data[0:4] + newBytes + self._data[12:self.size])
+	
+	@property
+	def mainData(self) -> bytes:
+		return self._data[12:self.size]
+	
+	@mainData.setter
+	def mainData(self, data:bytes):
+		self._data = bytes(self._data[0:12] + data)
+			
+	@property
+	def backingData(self) -> bytes:
+		return self._data
+	
+	@backingData.setter
+	def backingData(self, data:bytes):
+		self._data = data
 
 def _broadcastThread():
 	interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None,
@@ -35,7 +73,7 @@ def _runtimeServerThread():
 		runtimeSocket.listen(1)
 		connection, addr = runtimeSocket.accept()
 		print("Incomming connection from " + addr[0])
-		connection.settimeout(5)
+		connection.settimeout(30)
 		while True:
 			try:
 				# Receive a request packet from the connected computer
@@ -46,7 +84,7 @@ def _runtimeServerThread():
 					break
 				if getPacket.kind == 1:
 					retPacket.kind = 5
-					retPacket.size = 12 + 5
+					retPacket.size = 5
 					retPacket.mainData = b"12345"
 					pass
 
@@ -69,9 +107,13 @@ def createRuntimeServer():
 	return
 
 def getDoorbellIP() -> str:
+	'''
+
+	'''
 	clientSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	clientSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	clientSock.bind(("0.0.0.0", 8002))
+	clientSock.settimeout(1)
 	data, addr = clientSock.recvfrom(1024)
 	if data == b"HONK":
 		return addr[0]
