@@ -8,6 +8,7 @@ wsThr = None
 
 UDP_PORT = 8002
 RTS_PORT = 8001
+PACKET_MAX = 10485760
 
 def _broadcastThread():
 	interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None,
@@ -34,26 +35,23 @@ def _runtimeServerThread():
 		runtimeSocket.listen(1)
 		connection, addr = runtimeSocket.accept()
 		print("Incomming connection from " + addr[0])
-		connection.settimeout(1)
+		connection.settimeout(5)
 		while True:
 			try:
 				# Receive a request packet from the connected computer
-				getPacket = rqPacket.rqPacket(connection.recv(256))
-				retPacket = rqPacket.rqPacket(bytes(256))
+				getPacket = rqPacket.rqPacket(connection.recv(PACKET_MAX))
+				retPacket = rqPacket.rqPacket(bytes(PACKET_MAX))
 				if getPacket.size == 0:
 					connection.close()
 					break
 				if getPacket.kind == 1:
-					print(getPacket.mainData[0:4])
-					print(getPacket.size)
-					retPacket.kind = 123
-					retPacket.size = 19
-					retPacket.mainData = b"chicken"
+					pass
 
 				connection.sendto(retPacket.backingData, addr)
 			except:
 				connection.close()
 				break
+		print("Severed connection to " + addr[0])
 
 def createUDPBroadcaster():
 	global bcThr
@@ -67,6 +65,5 @@ def createRuntimeServer():
 	wsThr.start()
 	return
 
-createUDPBroadcaster()
-createRuntimeServer()
+
 
