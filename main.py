@@ -6,6 +6,7 @@ import time
 import ctypes
 # from playsound import playsound
 import threading
+from PiSubsys.webBackend import *
 
 from tkinter import filedialog, Tk
 
@@ -21,9 +22,6 @@ def play_sound():
 #     sound_thread.start()
     
 def empty_function():
-    pass
-
-def connect_function():
     pass
 
 def get_file_path():
@@ -42,6 +40,29 @@ except AttributeError:
 # textRect = text.get_rect() # get the rectangle around the text
 # textRect.center = (textRect.width//2, textRect.height//2) # set the center to the width/2 and the height/2, will appear in top left
 # screen.blit(text, textRect) # draw the text to the screen on its rectangle
+
+doorbell_ip = '127.0.0.1'
+the_socket = None
+
+
+def setup_connection():
+    global doorbell_ip, the_socket
+    doorbell_ip = getDoorbellIP()
+    if doorbell_ip != '127.0.0.1':
+        the_socket = connectToPi(doorbell_ip)
+    else:
+        the_socket = None
+setup_connection()
+
+def send_packet_data():
+    packet = rqPacket(bytes(256))
+    packet.kind = 1
+    packet.size = 17
+    packet.mainData = b"123456789\x00{SOUND FILE AS BYTES LAOLOOOl}"
+    retPack = pcSendPacket(the_socket, packet)
+    print(retPack.mainData)
+
+
 
 os.system('cls') # clears the terminal
 
@@ -153,6 +174,10 @@ class Button:
     def set_clickable(self, value) -> None:
         self.clickable = value
     
+    def update_text(self, value) -> None:
+        self.text = value
+        self.fit_text()
+    
     def fit_text(self, font_size: int = 32, buffer_size: int = 40):
     
         self.font = pygame.font.Font('freesansbold.ttf', font_size)
@@ -184,18 +209,19 @@ class Button:
         if display is None:
             display = self.display
 
-        # bottom button
-        pygame.draw.rect(   self.display,
-                            darken_color(self.color),
-                            the_rect_bottom,
-                            border_radius = 15)
-        
-        # bottom button outline
-        pygame.draw.rect(   self.display,
-                            black,
-                            the_rect_bottom,
-                            width = 5,
-                            border_radius = 15)
+        if self.clickable:
+            # bottom button
+            pygame.draw.rect(   self.display,
+                                darken_color(self.color),
+                                the_rect_bottom,
+                                border_radius = 15)
+            
+            # bottom button outline
+            pygame.draw.rect(   self.display,
+                                black,
+                                the_rect_bottom,
+                                width = 5,
+                                border_radius = 15)
         
         # top button 
         pygame.draw.rect(   self.display,
@@ -371,8 +397,15 @@ connect_button = Button((width/2-250, height/2-150), (500, 100), screen, red, "C
 # connecting to their doorbell
 edit_button = Button((width/2-250, height/2+50), (500, 100), screen, red, "Edit offline", black)
 
-title_screen.add_button(connect_button, empty_function)
+
+connection_display = Button((25, 25), (200, 100), screen, black, "Not Connected...", white)
+
+
+title_screen.add_button(connect_button, setup_connection)
 title_screen.add_button(edit_button, swap_container_contstructor("edit"))
+title_screen.add_button(connection_display, empty_function)
+
+connection_display.set_clickable(False)
 
 container_dict["title"] = title_screen
 
@@ -384,9 +417,9 @@ back_button = Button((5, 5), (100, 75), screen, red, "back", black)
 new_code_button = Button((width/2-150, 350), (300, 100), screen, black, "Add Code", white)
 edit_button = Button((1325, 115), (200, 100), screen, green, "Edit Code", white)
 delete_code_button = Button((1575, 115), (200, 100), screen, red, "Delete Code", white)
-upload_codes_button = Button((width-350, height-150), (300, 100), screen, purple, "Upload Code", white)
-import_codes_button = Button((50, height-150), (300, 100), screen, blue, "Import Code", white)
-export_codes_button = Button((width/2-150, height-150), (300, 100), screen, white, "Export Code", black)
+upload_codes_button = Button((width-350, height-150), (300, 100), screen, purple, "Upload Data", white)
+import_codes_button = Button((50, height-150), (300, 100), screen, blue, "Import Data", white)
+export_codes_button = Button((width/2-150, height-150), (300, 100), screen, white, "Export Data", black)
 
 data_background = Button((100, 100), (1100, 150), screen, dark_grey, "", black)
 edit_background = Button((1300, 100), (500, 150), screen, dark_grey, "", black)
@@ -402,7 +435,7 @@ sound_display.set_clickable(False)
 
 edit_screen.add_button(back_button, swap_container_contstructor("title"))
 edit_screen.add_button(new_code_button, empty_function)
-edit_screen.add_button(upload_codes_button, empty_function)
+edit_screen.add_button(upload_codes_button, send_packet_data)
 edit_screen.add_button(import_codes_button, empty_function)
 edit_screen.add_button(export_codes_button, empty_function)
 
@@ -422,12 +455,14 @@ container_dict["edit"] = edit_screen
 code_editor_screen = Container(screen)
 
 editor_background = Button((width/2-400, 100), (800, height-200), screen, dark_grey, "", black)
+back_button = Button((5, 5), (100, 75), screen, red, "back", black)
 
 upload_codes_button = Button((width-350, height-150), (300, 100), screen, purple, "Upload Code", white)
 import_codes_button = Button((50, height-150), (300, 100), screen, blue, "Import Code", white)
 export_codes_button = Button((width/2-150, height-150), (300, 100), screen, white, "Export Code", black)
 
 code_editor_screen.add_button(editor_background, empty_function)
+code_editor_screen.add_button(back_button, swap_container_contstructor("edit"))
 
 
 container_dict["editor"] = code_editor_screen
@@ -435,8 +470,11 @@ container_dict["editor"] = code_editor_screen
 
 
 
+# doorbell_ip = "127.0.0.1"
+# the_socket = None
 
-
+if the_socket is not None:
+    connection_display.update_text("Connected")
 
 while Running: # start the loop
 
