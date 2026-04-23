@@ -1,11 +1,8 @@
 import socket
 import time
+import PiSubsys.webBackend as web
 
-clientSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-clientSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-clientSock.bind(("0.0.0.0", 8002))
-data, addr = clientSock.recvfrom(1024)
-print(data)
+addr = web.getDoorbellIP()
 
 clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 clientSock.connect((addr[0], 8001))

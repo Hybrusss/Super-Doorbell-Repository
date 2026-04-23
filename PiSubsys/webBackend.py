@@ -1,7 +1,7 @@
 import threading
 import socket
 import time
-import rqPacket
+from rqPacket import rqPacket
 
 bcThr = None
 wsThr = None
@@ -22,9 +22,9 @@ def _broadcastThread():
 		ip = interfaces[i][4][0]
 	serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	serverSocket.settimeout(0.2)
-	# Broadcast that IP address of this system on the local network via UDP
+	# Broadcast the message HONK to broadcast the IP address of this system on the local network via UDP
 	while True:
-		serverSocket.sendto(bytes(ip, "ASCII"), ("255.255.255.255", UDP_PORT))
+		serverSocket.sendto(bytes("HONK", "ASCII"), ("255.255.255.255", UDP_PORT))
 		time.sleep(2)
 
 def _runtimeServerThread():
@@ -39,12 +39,15 @@ def _runtimeServerThread():
 		while True:
 			try:
 				# Receive a request packet from the connected computer
-				getPacket = rqPacket.rqPacket(connection.recv(PACKET_MAX))
-				retPacket = rqPacket.rqPacket(bytes(PACKET_MAX))
+				getPacket = rqPacket(connection.recv(PACKET_MAX))
+				retPacket = rqPacket(bytes(PACKET_MAX))
 				if getPacket.size == 0:
 					connection.close()
 					break
 				if getPacket.kind == 1:
+					retPacket.kind = 5
+					retPacket.size = 12 + 5
+					retPacket.mainData = b"12345"
 					pass
 
 				connection.sendto(retPacket.backingData, addr)
@@ -65,5 +68,27 @@ def createRuntimeServer():
 	wsThr.start()
 	return
 
+def getDoorbellIP() -> str:
+	clientSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	clientSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	clientSock.bind(("0.0.0.0", 8002))
+	data, addr = clientSock.recvfrom(1024)
+	if data == b"HONK":
+		return addr[0]
+	return "127.0.0.1"
+
+def connectToPi(ip:str) -> socket.socket:
+	clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	clientSock.connect((ip, 8001))
+	return clientSock
+
+def pcSendPacket(sock:socket.socket, packet:rqPacket) -> rqPacket:
+	sock.sendall(packet.backingData)
+	data = sock.recv(PACKET_MAX)
+	return rqPacket(data)
+
+if __name__ == "__main__":
+	createUDPBroadcaster()
+	createRuntimeServer()
 
 
