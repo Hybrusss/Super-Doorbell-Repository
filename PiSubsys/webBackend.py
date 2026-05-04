@@ -2,7 +2,6 @@ import threading
 import socket
 import time
 
-
 bcThr = None
 wsThr = None
 
@@ -77,16 +76,51 @@ def _runtimeServerThread():
 		while True:
 			try:
 				# Receive a request packet from the connected computer
+				import codeAPI
 				getPacket = rqPacket(connection.recv(PACKET_MAX))
 				retPacket = rqPacket(bytes(PACKET_MAX))
-				if getPacket.size == 0:
+				status = 0
+
+				if getPacket.size == 12:
 					connection.close()
 					break
 				if getPacket.kind == 1:
-					retPacket.kind = 5
-					retPacket.size = 5
-					retPacket.mainData = b"12345"
-					pass
+					if getPacket.size < 72:
+						status = codeAPI.UNK_FAIL
+					else:	
+						try:
+							code = int.from_bytes(getPacket.mainData, 8)
+							soundName = str(getPacket.mainData[8:71])
+							fileBytes = getPacket.mainData[72:getPacket.size]
+							codeAPI.writeSoundFile(soundName, fileBytes)
+							status = codeAPI.addCode(code, soundName)
+						except Exception as ex:
+							print(ex)
+							status = codeAPI.UNK_FAIL
+				elif getPacket.kind == 2:
+					if getPacket.size < 8:
+						status = codeAPI.UNK_FAIL
+					else:
+						status = codeAPI.delCode()
+				elif getPacket.kind == 3:
+					if getPacket.size == 0:
+						status = codeAPI.IMP_FAIL
+					else:
+						status = codeAPI.importCodesFile(
+							getPacket.mainData[0:getPacket.size])
+				if getPacket.kind == 4: # special case
+					fileBytes = codeAPI.exportCodesFile()
+					if fileBytes == None:
+						retPacket.size = 1
+						retPacket.mainData = b'\0'
+					else:
+						retPacket.size = len(fileBytes)
+						retPacket.mainData = fileBytes
+					retPacket.kind = 4
+				else:
+					retPacket.kind = 0
+					retPacket.size = 4
+					retPacket.mainData = int.to_bytes(status, 4)
 
 				connection.sendto(retPacket.backingData, addr)
 			except:
@@ -128,9 +162,3 @@ def pcSendPacket(sock:socket.socket, packet:rqPacket) -> rqPacket:
 	sock.sendall(packet.backingData)
 	data = sock.recv(PACKET_MAX)
 	return rqPacket(data)
-
-if __name__ == "__main__":
-	createUDPBroadcaster()
-	createRuntimeServer()
-
-
