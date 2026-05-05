@@ -2,6 +2,8 @@ import threading
 import socket
 import time
 
+webRunning = True
+
 bcThr = None
 wsThr = None
 
@@ -60,14 +62,15 @@ def _broadcastThread():
 	serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	serverSocket.settimeout(0.2)
 	# Broadcast the message HONK to broadcast the IP address of this system on the local network via UDP
-	while True:
+	while webRunning:
 		serverSocket.sendto(bytes("HONK", "ASCII"), ("255.255.255.255", UDP_PORT))
 		time.sleep(2)
+	serverSocket.close()
 
 def _runtimeServerThread():
 	runtimeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	runtimeSocket.bind(("0.0.0.0", RTS_PORT))
-	while True:
+	while webRunning:
 		# Accept only one incomming connection for the runtime API
 		runtimeSocket.listen(1)
 		connection, addr = runtimeSocket.accept()
@@ -127,6 +130,7 @@ def _runtimeServerThread():
 				connection.close()
 				break
 		print("Severed connection to " + addr[0])
+	runtimeSocket.close()
 
 def createUDPBroadcaster():
 	global bcThr
