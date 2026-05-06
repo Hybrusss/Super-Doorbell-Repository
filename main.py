@@ -21,12 +21,18 @@ the_sound_path = ""
 # [CODE] : {"Name"   : name,
 #            "Sound" : sound data in bytes}
 input_codes_data = {}
-current_editing_code = None
 
 # this is the page number that the 
 # user was on before editing the
 # code they are currently editing
 last_viewed_page = 1
+
+choosing_file = False
+
+def beautify_path(path):
+    while "/" in path:
+        path = path[path.index("/")+1:]
+    return path
 
 def play_sound():
     pass
@@ -39,11 +45,36 @@ def empty_function():
 def connect_function():
     pass
 
-def get_file_path():
-    global the_sound_path
-    file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\temp sounds")
-    the_sound_path = file_path
-    # playsound(the_sound_path)
+def get_file_path(the_element = None, the_holder = None):
+
+    def output_func_1():
+
+        global the_sound_path
+
+        file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\temp sounds")
+
+        the_sound_path = file_path
+
+    def output_func_2():
+
+        global choosing_file
+
+        choosing_file = True
+
+        file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\temp sounds")
+
+        choosing_file = False
+
+        the_element.text = beautify_path(file_path)
+        the_holder.text = file_path
+
+    if the_element is None:
+
+        return output_func_1
+
+    else:
+        return output_func_2
+
 
 # Tell Windows your app is DPI aware to prevent double-scaling
 try:
@@ -127,7 +158,8 @@ class Element:
                     color: tuple[int, int, int],
                     text: str,
                     text_color: tuple[int, int, int],
-                    element_type: str = "Button") -> None:
+                    element_type: str = "Button",
+                    name: str = "") -> None:
         
         self.position = position
         self.size = size
@@ -135,6 +167,7 @@ class Element:
         self.color = color
         self.text_color = text_color
         self.text = text
+        self.name = name
 
         self.element_type = element_type
         self.pressed = False
@@ -184,6 +217,7 @@ class Element:
     @text.setter
     def text(self, value: str) -> None:
         self._text = value
+        self.fit_text()
     
     def set_parent(self, value) -> None:
         self.parent_container = value
@@ -198,20 +232,33 @@ class Element:
     def fit_text(self, font_size: int = 32, buffer_size: int = 40):
     
         self.font = pygame.font.Font('freesansbold.ttf', font_size)
-        text = self.font.render(self.text, True, self.text_color) 
-        textRect = text.get_rect()
+        the_size = self.font.size(self.text)
+        width_multiple = the_size[0] / (self.size[0] - buffer_size)
+        height_multiple = the_size[1] / (self.size[1] - buffer_size)
+        if max(width_multiple, height_multiple) > 0:
+            font_size = int(font_size / max(width_multiple, height_multiple))
+        else:
+            return
 
-        while textRect.width > self.size[0] - buffer_size or textRect.height > self.size[1] - buffer_size:
+
+        # text = self.font.render(self.text, True, self.text_color) 
+
+        while the_size[0] > self.size[0] - buffer_size or the_size[1] > self.size[1] - buffer_size:
             font_size -= 1
             self.font = pygame.font.Font('freesansbold.ttf', font_size)
-            text = self.font.render(self.text, True, self.text_color) 
-            textRect = text.get_rect()
+            the_size = self.font.size(self.text)
+            # text = self.font.render(self.text, True, self.text_color) 
+            # the_size = text.get_rect()
 
-        while textRect.width < self.size[0] - buffer_size and textRect.height < self.size[1] - buffer_size:
+        while the_size[0] < self.size[0] - buffer_size and the_size[1] < self.size[1] - buffer_size:
             font_size += 1
             self.font = pygame.font.Font('freesansbold.ttf', font_size)
-            text = self.font.render(self.text, True, self.text_color) 
-            textRect = text.get_rect()
+            the_size = self.font.size(self.text)
+            # text = self.font.render(self.text, True, self.text_color) 
+            # the_size = text.get_rect()
+        text = self.font.render(self.text, True, self.text_color) 
+        textRect = text.get_rect()
+        
         
     
     def draw(self, display: pygame.Surface = None) -> None:
@@ -240,18 +287,20 @@ class Element:
                                 width = 5,
                                 border_radius = 15)
         
-        # element 
-        pygame.draw.rect(   self.display,
-                            self.color,
-                            the_rect,
-                            border_radius = 15)
+        if self.element_type != "Label":
         
-        # element outline
-        pygame.draw.rect(   self.display,
-                            black,
-                            the_rect,
-                            width = 5,
-                            border_radius = 15)
+            # element 
+            pygame.draw.rect(   self.display,
+                                self.color,
+                                the_rect,
+                                border_radius = 15)
+            
+            # element outline
+            pygame.draw.rect(   self.display,
+                                black,
+                                the_rect,
+                                width = 5,
+                                border_radius = 15)
         
         self.draw_element_text(the_rect, True, 2)
         
@@ -307,9 +356,11 @@ class Element:
             return False
 
         if self.element_type == "Text Box":
-            global currently_typing
-            currently_typing = self
+            if self.name != "Sound Input":
+                global currently_typing
+                currently_typing = self
             return True
+
 
         elif self.element_type == "Button":
             self.pressed = True
@@ -326,6 +377,7 @@ currently_typing: Element = None
 # holds different elements and can be
 # switched between by pressing certain
 # buttons
+
 class Container:
     
     def __init__(self, display: pygame.Surface) -> None:
@@ -403,28 +455,37 @@ def type_number_contructor(input: str):
 def swap_container_constructor(container_input_value, page_num = None):
 
     if type(container_input_value) == str:
+
         def output_func():
             global current_container
             current_container = container_input_value
-    else:
+
+    elif type(container_input_value) == int:
+
         def output_func():
-            global current_container, current_editing_code, last_viewed_page
+
+            global current_container, last_viewed_page
             current_container = "editor"
-            current_editing_code = container_input_value
             the_container: Container = container_dict["editor"]
 
-            name_box = [x for x in the_container.elements.keys() if x.position[1] == 200][0]
-            code_box = [x for x in the_container.elements.keys() if x.position[1] == 400][0]
-            sound_box = [x for x in the_container.elements.keys() if x.position[1] == 600][0]
+            the_code = container_input_value
 
-            name_box.update_text(input_codes_data[current_editing_code]["Name"])
-            sound_box.update_text(input_codes_data[current_editing_code]["Sound"])
-            code_box.update_text(str(current_editing_code))
+            name_box = [x for x in the_container.elements.keys() if x.position[1] == 250][0]
+            code_box = [x for x in the_container.elements.keys() if x.position[1] == 550][0]
+            sound_box = [x for x in the_container.elements.keys() if x.position[1] == 850][0]
+            secret_sound_box = [x for x in the_container.elements.keys() if x.name == "Sound Input Secret"][0]
+
+            name_box.update_text(input_codes_data[the_code]["Name"])
+            sound_box.update_text(beautify_path(input_codes_data[the_code]["Sound"]))
+            secret_sound_box.update_text(input_codes_data[the_code]["Sound"])
+            code_box.update_text(str(the_code))
 
 
             if page_num is None:
                 raise ValueError("Variable \"page_num\" was not given")
             last_viewed_page = page_num
+
+            del input_codes_data[the_code]
 
             return output_func
 
@@ -467,34 +528,33 @@ testing_buttons.add_element(text_button, text_button.text)
 container_dict["testing"] = testing_buttons
 
 
+def title_screen_maker():
 
-# will be the first screen that greets the user
-title_screen = Container(screen)
+    # will be the first screen that greets the user
+    title_screen = Container(screen)
 
-# this button will be part of the connection process
-connect_button = Element((width/2-250, height/2-150), (500, 100), screen, red, "Connect to doorbell", black)
+    # this button will be part of the connection process
+    connect_button = Element((width/2-250, height/2-150), (500, 100), screen, red, "Connect to doorbell", black)
 
-# this button will allow users to edit doorbell settings prior to
-# connecting to their doorbell
-edit_button = Element((width/2-250, height/2+50), (500, 100), screen, red, "Edit offline", black)
-
-
-connection_display = Element((25, 25), (200, 100), screen, black, "Not Connected...", white)
+    # this button will allow users to edit doorbell settings prior to
+    # connecting to their doorbell
+    edit_button = Element((width/2-250, height/2+50), (500, 100), screen, red, "Edit offline", black)
 
 
-title_screen.add_element(connect_button, setup_connection)
-title_screen.add_element(edit_button, swap_container_constructor("edit"))
-title_screen.add_element(connection_display, empty_function)
-
-connection_display.set_element_type(False)
-
-container_dict["title"] = title_screen
+    connection_display = Element((25, 25), (200, 100), screen, black, "Not Connected...", white)
 
 
+    title_screen.add_element(connect_button, setup_connection)
+    title_screen.add_element(edit_button, swap_container_constructor("edit"))
+    title_screen.add_element(connection_display, empty_function)
+
+    connection_display.set_element_type(False)
+
+    return title_screen
+
+container_dict["title"] = title_screen_maker()
 
 edit_screen = Container(screen)
-
-
 
 def update_edit_display(page_number: int = None) -> Container:
 
@@ -513,6 +573,8 @@ def update_edit_display(page_number: int = None) -> Container:
     # being viewed at the time
     # (number starts at 1)
     skip_amount = (page_number-1) * 4
+
+
 
     for input_code in input_codes_data.keys():
         print(input_codes_data, 1)
@@ -538,7 +600,7 @@ def update_edit_display(page_number: int = None) -> Container:
 
         name_display.update_text(str(input_codes_data[input_code]["Name"]))
         code_display.update_text(str(input_code))
-        sound_display.update_text(str(input_codes_data[input_code]["Sound"]))
+        sound_display.update_text(beautify_path(str(input_codes_data[input_code]["Sound"])))
 
         output_container.add_element(data_background, empty_function)
         output_container.add_element(name_display, empty_function)
@@ -555,6 +617,22 @@ def update_edit_display(page_number: int = None) -> Container:
         if new_code_button_y == 900:
             show_new_code_button = False
             break
+    
+    
+    # if there are codes being displayed on screen
+    if new_code_button_y != 100:
+
+        name_label = Element((175, 15), (150, 75), screen, black, "Name", white)
+        code_label = Element((575, 15), (150, 75), screen, black, "Code", white)
+        sound_label = Element((975, 15), (150, 75), screen, black, "Sound", white)
+
+        name_label.set_element_type("Box")
+        code_label.set_element_type("Box")
+        sound_label.set_element_type("Box")
+
+        output_container.add_element(name_label, empty_function)
+        output_container.add_element(code_label, empty_function)
+        output_container.add_element(sound_label, empty_function)
 
 
     # if not on the first page we are going
@@ -589,12 +667,12 @@ def update_edit_display(page_number: int = None) -> Container:
 
     return output_container
 
-def add_code_constructor(current_page: int = 1, number: int = 1, name: str = "1", data = "1"):
+def add_code_constructor(current_page: int = 1, number: int = 1, name: str = "1", path = ""):
 
     def output_func():
 
         global input_codes_data
-        input_codes_data[len(input_codes_data)] = {"Name": name, "Sound": data}
+        input_codes_data[len(input_codes_data)] = {"Name": name, "Sound": path}
         container_dict["edit"] = update_edit_display(current_page)
     
     return output_func
@@ -623,30 +701,32 @@ def page_switcher_constructor(page_num):
     
     return output_func
 
-
 container_dict["edit"] = update_edit_display(1)
 
-def update_code_constructor(container: Container):
+def update_code_constructor(container: Container, the_error_object):
 
     def output_func():
         global current_container
-        #name code sound
 
-        name_container = [x for x in container.elements.keys() if x.position[1] == 200][0]
-        code_container = [x for x in container.elements.keys() if x.position[1] == 400][0]
-        sound_container = [x for x in container.elements.keys() if x.position[1] == 600][0]
+        name_container = [x for x in container.elements.keys() if x.name == "Name Input"][0]
+        code_container = [x for x in container.elements.keys() if x.name == "Code Input"][0]
+        sound_container = [x for x in container.elements.keys() if x.name == "Sound Input Secret"][0]
 
-        print(current_editing_code)
-        print(input_codes_data)
-        
-        input_codes_data[current_editing_code]["Name"] = name_container.text
-        input_codes_data[current_editing_code]["Sound"] = sound_container.text
 
-        if int(code_container.text) in input_codes_data:
+            
+        if not code_container.text.isdecimal():
+            the_error_object.text = "Code must be a number"
+            return 
+
+        code = int(code_container.text)
+        if code in input_codes_data:
+            the_error_object.text = "Code already in use"
             return
-
-        input_codes_data[int(code_container.text)] = input_codes_data[current_editing_code]
-        del input_codes_data[current_editing_code]
+        
+        else:
+            name = name_container.text
+            sound_path = sound_container.text
+            input_codes_data[code] = {"Name": name, "Sound": sound_path}
 
         current_container = "edit"
 
@@ -655,26 +735,49 @@ def update_code_constructor(container: Container):
     return output_func
     
 
+def editor_screen_maker():
 
-code_editor_screen = Container(screen)
+    code_editor_screen = Container(screen)
 
-editor_background = Element((width/2-400, 100), (800, height-200), screen, dark_grey, "", black, "Box")
-back_button = Element((5, 5), (100, 75), screen, red, "back", black)
+    editor_background = Element((width/2-400, 100), (800, height-200), screen, dark_grey, "", black, "Box")
+    back_button = Element((5, 5), (100, 75), screen, red, "back", black)
 
-name_type_box = Element((width/2-300, 200), (600, 100), screen, black, "", white, "Text Box")
-code_type_box = Element((width/2-300, 400), (600, 100), screen, black, "", white, "Text Box")
-sound_type_box = Element((width/2-300, 600), (600, 100), screen, black, "", white, "Text Box")
+    name_type_box = Element((width/2-300, 250), (600, 100), screen, black, "", white, "Text Box", "Name Input")
+    code_type_box = Element((width/2-300, 550), (600, 100), screen, black, "", white, "Text Box", "Code Input")
+    sound_type_box = Element((width/2-300, 850), (600, 100), screen, black, "", white, "Text Box", "Sound Input")
 
-code_editor_screen.add_element(editor_background, empty_function)
-code_editor_screen.add_element(name_type_box, empty_function)
-code_editor_screen.add_element(code_type_box, empty_function)
-code_editor_screen.add_element(sound_type_box, empty_function)
-code_editor_screen.add_element(back_button, update_code_constructor(code_editor_screen))
+    # will hold the full path of the sound to allow the
+    # user to see a truncated version to account for 
+    # excessive path size
+    secret_sound_holder = Element((-100, -100), (0, 0), screen, grey, "", grey, "Text Box", "Sound Input Secret")
+
+    name_label = Element((width/2-300, 150), (300, 100), screen, black, "Name", white, "Label")
+    code_label = Element((width/2-300, 450), (300, 100), screen, black, "Code", white, "Label")
+    sound_label = Element((width/2-300, 750), (300, 100), screen, black, "Sound", white, "Label")
+
+    error_display = Element((5, 100), (300, 100), screen, black, "", red, "Label", "Error Display")
 
 
-container_dict["editor"] = code_editor_screen
+    code_editor_screen.add_element(editor_background, empty_function)
+
+    code_editor_screen.add_element(name_type_box, empty_function)
+    code_editor_screen.add_element(code_type_box, empty_function)
+    code_editor_screen.add_element(sound_type_box, get_file_path(sound_type_box, secret_sound_holder))
+
+    code_editor_screen.add_element(secret_sound_holder, empty_function)
+
+    code_editor_screen.add_element(name_label, empty_function)
+    code_editor_screen.add_element(code_label, empty_function)
+    code_editor_screen.add_element(sound_label, empty_function)
+
+    code_editor_screen.add_element(error_display, empty_function)
+
+    code_editor_screen.add_element(back_button, update_code_constructor(code_editor_screen, error_display))
+
+    return code_editor_screen
 
 
+container_dict["editor"] = editor_screen_maker()
 
 
 pygame.key.set_repeat(350, 35)
@@ -705,7 +808,7 @@ while Running: # start the loop
             container_dict[current_container].click_check(pygame.mouse.get_pos(), False)
         
         if event.type == pygame.KEYDOWN:
-            if currently_typing != None:
+            if currently_typing != None and choosing_file == False:
                 if event.unicode == "\b":
                     if len(currently_typing.text) > 0:
                         currently_typing.update_text(currently_typing.text[:-1])
