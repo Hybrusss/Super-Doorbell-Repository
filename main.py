@@ -1,15 +1,9 @@
 import pygame # main import
 import os # for offsetting window open position
-from collections.abc import Callable
 import ctypes
 
-from screens import *
-import functions
-from screens import editor_screen_maker
-
-from tkinter import Tk
-
 import screens
+import functions
 import classes
 
 from statics import *
@@ -41,11 +35,11 @@ font = pygame.font.Font('freesansbold.ttf', 32) # create font - (font, fontsize)
 Running = True # set variable for stopping the loop
 
 
-container_dict["title"] = title_screen_maker(screen)
+screens.container_dict["title"] = screens.title_screen_maker(screen)
 
-container_dict["edit"] = update_edit_display(screen, 1)
+screens.container_dict["edit"] = screens.update_edit_display(screen, 1)
 
-container_dict["editor"] = editor_screen_maker(screen)
+screens.container_dict["editor"] = screens.editor_screen_maker(screen)
 
 
 pygame.key.set_repeat(350, 35)
@@ -74,7 +68,7 @@ while Running: # start the loop
 
         # checks for left click up
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            container_dict[current_container].click_check(pygame.mouse.get_pos(), False)
+            screens.container_dict[screens.current_container].click_check(pygame.mouse.get_pos(), False)
         
         if event.type == pygame.KEYDOWN:
             if classes.currently_typing != None and functions.choosing_file == False:

@@ -3,7 +3,6 @@ from classes import Element, Container
 from functions import empty_function, get_file_path, beautify_path
 from connection import setup_connection, send_packet_data
 
-
 from statics import *
 
 

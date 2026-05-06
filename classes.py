@@ -2,7 +2,6 @@ import pygame # main import
 from functions import darken_color
 from collections.abc import Callable
 
-
 from statics import *
 
 

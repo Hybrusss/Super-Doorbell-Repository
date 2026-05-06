@@ -8,8 +8,6 @@ def setup_connection():
     else:
         the_socket = None
 
-# setup_connection()
-
 def send_packet_data():
     packet = rqPacket(bytes(256))
     packet.kind = 1
