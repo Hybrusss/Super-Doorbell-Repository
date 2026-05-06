@@ -56,8 +56,6 @@ def update_codes(screen, container: Container, the_error_object):
         
         container_dict[current_container].being_drawn = False
 
-        print(current_container, False, 3)
-
         current_container = "edit"
 
         container_dict[current_container].being_drawn = True
@@ -136,7 +134,6 @@ def update_edit_display(screen, page_number: int = None) -> Container:
 
 
     for input_code in input_codes_data.keys():
-        print(input_codes_data, 1)
 
         if skip_amount > 0:
             skip_amount -= 1
@@ -277,11 +274,7 @@ def swap_container_constructor(container_input_value, page_num = None):
             
             container_dict[current_container].being_drawn = False
 
-            print(current_container, False, 1)
-
             current_container = container_input_value
-
-            print(current_container)
 
             container_dict[current_container].being_drawn = True
 
@@ -292,8 +285,6 @@ def swap_container_constructor(container_input_value, page_num = None):
             global current_container, last_viewed_page
             
             container_dict[current_container].being_drawn = False
-
-            print(current_container, False, 2)
 
             current_container = "editor"
 
@@ -345,10 +336,10 @@ def title_screen_maker(screen):
 
     # this button will allow users to edit doorbell settings prior to
     # connecting to their doorbell
-    edit_button = Element((width/2-250, height/2+50), (500, 100), screen, red, "Edit offline", black)
+    edit_button = Element((width/2-250, height/2+50), (500, 100), screen, red, "Edit", black)
 
 
-    connection_display = Element((25, 25), (200, 100), screen, black, "Not Connected...", white)
+    connection_display = Element((25, 25), (200, 100), screen, black, "Not Connected...", white, "Label", "Connection Box")
 
 
     title_screen.add_element(connect_button, setup_connection)

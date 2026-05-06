@@ -13,7 +13,7 @@ The remaining bytes are the actual object being sent over the network.
 ## Request Types
 0: Status Packet; the size should be 4 with the information field containing a 32-bit integer detailing a status code or a keep-alive code.
 
-1: Doorbell Pin Add; the size should indicate how large the sound file is plus the size of its name and the pin associated with it. Returns whether or not the pin was added in a Status Packet.
+1: Doorbell Pin Add; the size should indicate how large the sound file is plus the size of its name and the pin associated with it. Returns whether or not the pin was added in a Status Packet. Size should be 8 + 64 + sound file size
 
 2: Doorbell Pin Remove; the size should be how large the pin integer is. Returns whether or not the pin was removed in a Status Packet.
 

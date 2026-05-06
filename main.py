@@ -5,10 +5,18 @@ import ctypes
 import screens
 import functions
 import classes
+import time
+
+import connection
 
 from statics import *
 
 os.system('cls') # clears the terminal
+
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)
+except Exception:
+    ctypes.windll.user32.SetProcessDPIAware()
 
 pygame.init() # initializing for other things incase they are needed
 
@@ -18,10 +26,6 @@ info = pygame.display.Info()
 width, height = info.current_w, info.current_h
 
 # Tell Windows your app is DPI aware to prevent double-scaling
-try:
-    ctypes.windll.user32.SetProcessDPIAware()
-except AttributeError:
-    pass # Non-Windows platforms or older Windows versions
 
 # x and y offset of window open position
 xOffset, yOffset = 0, 0
@@ -45,7 +49,17 @@ screens.container_dict["editor"] = screens.editor_screen_maker(screen)
 pygame.key.set_repeat(350, 35)
 
 
+connection.setup_connection()
+
+last_keep_alive = time.time()
+
 while Running: # start the loop
+
+    if time.time() - last_keep_alive > 10:
+
+        connection.keep_alive_packet()
+
+        last_keep_alive = time.time()
 
     screen.fill(grey)
     
@@ -64,7 +78,6 @@ while Running: # start the loop
         # checks for left click down
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             screens.container_dict[screens.current_container].click_check(pygame.mouse.get_pos(), True)
-            # print(container_dict, current_container)
 
         # checks for left click up
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:

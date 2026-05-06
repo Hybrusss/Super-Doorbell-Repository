@@ -188,7 +188,6 @@ class Element:
 
     def click_check(self, position: tuple[int, int], down_click: bool) -> bool:
 
-        print("haha")
 
         # if the click was not a down click
         # or
@@ -200,8 +199,6 @@ class Element:
 
         # if the element is not currently being drawn
 
-        # print(current_container)
-        print(self.parent_container.being_drawn)
         if self.parent_container.being_drawn == False:
             self.pressed = False
             return False
@@ -282,7 +279,6 @@ class Container:
     def click_check(self, position: tuple[int, int], down_click: bool) -> None:
         for element, func in self.elements.items():
             if element.click_check(position, down_click):
-                print("iuahbfuiawbf")
                 func()
                 element.click_check(position, down_click)
 
