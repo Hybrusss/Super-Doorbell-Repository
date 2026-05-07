@@ -77,4 +77,5 @@ class code:
 
 
 		fileHandle.close()
-		return
+		return codes
+

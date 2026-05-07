@@ -1,6 +1,6 @@
 from webBackend import *
 import codeAPI
-import playsound
+import pygame
 
 pdThr = None
 mutex = threading.Lock()
@@ -70,18 +70,27 @@ def _buttonHandler(channel:int):
                 curBut = '#'
         if curBut == '':
             return
+        if curBut == '*':
+            currentPinStr = currentPinStr[:-1]
+            print(currentPinStr)
+            return
 
         currentPinStr += curBut
+        print(currentPinStr)
         if currentPinStr[-1] == '#':
-            sndFile = codeAPI.retrieveSound(int(currentPinStr[:-1]))
+            print(currentPinStr[:-1])
             try:
-                playsound.playsound(sndFile)
+                sndFile = codeAPI.retrieveSound(int(currentPinStr[:-1]))
+                snd = pygame.mixer.Sound(sndFile)
+                snd.play()
             finally:
                 currentPinStr = ""
         
         lastPressTime = time.time()
 
 def _pinpadDriverThread():
+    pygame.mixer.init()
+    
     import RPi.GPIO as GPIO
 
     GPIO.setmode(GPIO.BCM)
@@ -93,10 +102,10 @@ def _pinpadDriverThread():
     GPIO.setup(PIN_ROW2, GPIO.IN, GPIO.PUD_DOWN)
     GPIO.setup(PIN_ROW3, GPIO.IN, GPIO.PUD_DOWN)
 
-    GPIO.add_event_detect(PIN_ROW0, GPIO.RISING, _buttonHandler, 1)
-    GPIO.add_event_detect(PIN_ROW1, GPIO.RISING, _buttonHandler, 1)
-    GPIO.add_event_detect(PIN_ROW2, GPIO.RISING, _buttonHandler, 1)
-    GPIO.add_event_detect(PIN_ROW3, GPIO.RISING, _buttonHandler, 1)
+    GPIO.add_event_detect(PIN_ROW0, GPIO.RISING, _buttonHandler, 50)
+    GPIO.add_event_detect(PIN_ROW1, GPIO.RISING, _buttonHandler, 50)
+    GPIO.add_event_detect(PIN_ROW2, GPIO.RISING, _buttonHandler, 50)
+    GPIO.add_event_detect(PIN_ROW3, GPIO.RISING, _buttonHandler, 50)
     global currentColumn
     try:
         # The following loop iterates through each column and row to see which button is pressed
@@ -124,9 +133,10 @@ def _pinpadDriverThread():
         webRunning = False
         GPIO.cleanup()
         print("Exiting doorbell subsystem...")
-        exit(0)
+        import os
+        os._exit(0)
 
-
+codeAPI.loadMainCodesFile()
 createUDPBroadcaster()
 createRuntimeServer()
 _pinpadDriverThread()

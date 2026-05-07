@@ -55,15 +55,15 @@ def upload_data(the_data: dict):
             raise ValueError()
         elif nameLen < 64:
             soundNameBytes += b'\x00' * (64 - nameLen)
-            
-        packet = rqPacket(bytes(PACKET_MAX))
+        print(soundNameBytes)
+        packet = rqPacket(bytes(12))
         packet.kind = 1
         packet.size = 8 + 64 + sound_size
-        packet.mainData = int.to_bytes(code, 8) + soundNameBytes + sound_file_as_bytes
+        packet.mainData = int.to_bytes(code, 8, 'big') + soundNameBytes + sound_file_as_bytes
         
         print(packet.backingData[:500])
 
         pcSendPacket(the_socket, packet)
 
 setup_connection()
-upload_data({14234: {"Name": "Balls", "Sound": "d:\sound.mp3"}})
+upload_data({14234: {"Name": "Balls", "Sound": "/Users/gabrielphilippi/5080.wav"}})

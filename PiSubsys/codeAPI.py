@@ -11,11 +11,16 @@ mainCodes = []
 
 def loadMainCodesFile():
 	'''Loads mainCodes.cd from the disk.'''
-	mainCodes = code.createListFromFile("mainCodes.cd")
+	global mainCodes
+	try:
+		mainCodes = code.createListFromFile("mainCodes.cd")
+		print(mainCodes)
+	finally:
+		return
 
 def saveMainCodesFile():
 	'''Saves mainCodes.cd to the disk.'''
-	code.createFileFromList("mainCodes.cd")
+	code.createFileFromList("mainCodes.cd", mainCodes)
 
 def importCodesFile(file:bytes):
 	fileHandle = None
@@ -31,6 +36,9 @@ def importCodesFile(file:bytes):
 	return 0
 
 def exportCodesFile() -> bytes:
+	'''
+	Exports the entire binary file
+	'''
 	fileHandle = None
 	try:
 		fileHandle = open(f"{Path.home()}/doorbell/settings/mainCodes.cd", "br")
@@ -45,26 +53,28 @@ def exportCodesFile() -> bytes:
 
 def addCode(pin:int, sound:str) -> int:
 	'''Adds the code {pin} to the list with the specified sound file {sound}.'''
-	for cd in mainCodes:
-		if (cd.val == pin):
-			return ADD_FAIL
-	newCode = code(pin, f"{Path.home()}/doorbell/sounds/" + sound)
-	mainCodes.append(newCode)
-	return 0
-
-def delCode(pin:int) -> int:
-	'''Removes the specified code {pin} from the list.'''
+	global mainCodes
 	for cd in mainCodes:
 		if (cd.val == pin):
 			mainCodes.remove(cd)
-			return 0
-	return REM_FAIL
+			break
+	newCode = code(pin, f"{Path.home()}/doorbell/sounds/" + sound)
+	mainCodes.append(newCode)
+	saveMainCodesFile()
+	return 0
+
+def delCodes() -> int:
+	'''Removes all codes from the list.'''
+	global mainCodes
+	mainCodes = []
+	return 0
 
 def retrieveSound(pin:int) -> str:
 	'''
 	Searches for the specified pin and returns the sound file.\n
 	Returns an empty string if no file was found.
 	'''
+	print(mainCodes)
 	for cd in mainCodes:
 		if (cd.val == pin):
 			return cd.soundFile
