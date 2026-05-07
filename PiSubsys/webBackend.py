@@ -40,7 +40,6 @@ class rqPacket:
 	@mainData.setter
 	def mainData(self, data:bytes):
 		self._data = bytes(self._data[0:12] + data)
-		self.size = len(data)
 			
 	@property
 	def backingData(self) -> bytes:
@@ -91,11 +90,12 @@ def _runtimeServerThread():
 				
 				lastSize = getPacket.size - len(getPacket.mainData)
 				while getPacket.size != len(getPacket.mainData):
-					getPacket.mainData += connection.recv(4096)
+					getPacket.mainData += connection.recv(PACKET_MAX)
+					if lastSize == 24:
+						break
 					if getPacket.size - len(getPacket.mainData) == lastSize:
-						raise TimeoutError()
-					else:
-						lastSize = getPacket.size - len(getPacket.mainData)
+						break
+					lastSize = getPacket.size - len(getPacket.mainData)
 				
 				print(getPacket.kind)
 				print(getPacket.size)
@@ -145,8 +145,8 @@ def _runtimeServerThread():
 				connection.sendto(retPacket.backingData, addr)
 			except Exception as h:
 				print(h)
-				connection.close()
 				break
+			connection.close()
 		print("Severed connection to " + addr[0])
 	runtimeSocket.close()
 
@@ -175,7 +175,7 @@ def getDoorbellIP() -> str:
 	clientSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	clientSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	clientSock.bind(("0.0.0.0", 8002))
-	clientSock.settimeout(1)
+	clientSock.settimeout(5)
 	data, addr = clientSock.recvfrom(1024)
 	if data == b"HONK":
 		return addr[0]
@@ -200,7 +200,7 @@ def pcSendPacket(sock:socket.socket, packet:rqPacket) -> rqPacket:
 	try:
 		lastSize = retPack.size - len(retPack.mainData)
 		while retPack.size != len(retPack.mainData):
-			retPack.mainData += sock.recv(4096)
+			retPack.mainData += sock.recv(lastSize)
 			if retPack.size - len(retPack.mainData) == lastSize:
 				break
 			else:
