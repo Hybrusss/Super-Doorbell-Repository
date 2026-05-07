@@ -35,33 +35,48 @@ def keep_alive_packet():
 
 def upload_data(the_data: dict):
 
-    for code in the_data:
-        
-        sound_path = the_data[code]["Sound"]
-        sound_pathOb = Path(sound_path)
+    print(the_data)
 
-        sound_file_as_bytes = ""
+    def output_func():
 
-        with open(sound_path, 'rb') as f:
-            sound_file_as_bytes = f.read()
-        
+        packet = rqPacket(bytes(1))
+        packet.kind = 2
+        packet.size = 1
+        packet.mainData = b"0"
 
-        # size of sound in bytes
-        
-        sound_size = os.path.getsize(sound_path)
-        soundNameBytes = bytes(sound_pathOb.stem + sound_pathOb.suffix, 'utf-8')
-        nameLen = len(soundNameBytes)
-        if nameLen > 64:
-            raise ValueError()
-        elif nameLen < 64:
-            soundNameBytes += b'\x00' * (64 - nameLen)
-        print(sound_size)
-        packet = rqPacket(bytes(12))
-        packet.kind = 1
-        packet.size = 8 + 64 + sound_size
-        packet.mainData = int.to_bytes(code, 8, 'big') + soundNameBytes + sound_file_as_bytes
-        
         pcSendPacket(the_socket, packet)
 
-setup_connection()
-upload_data({14234: {"Name": "Balls", "Sound": "/Users/gabrielphilippi/5080.wav"}})
+
+        for code in the_data:
+            
+            sound_path = the_data[code]["Sound"]
+            sound_pathOb = Path(sound_path)
+
+            sound_file_as_bytes = ""
+
+            with open(sound_path, 'rb') as f:
+                sound_file_as_bytes = f.read()
+            
+
+            # size of sound in bytes
+            
+            sound_size = os.path.getsize(sound_path)
+            soundNameBytes = bytes(sound_pathOb.stem + sound_pathOb.suffix, 'utf-8')
+            nameLen = len(soundNameBytes)
+            if nameLen > 64:
+                raise ValueError()
+            elif nameLen < 64:
+                soundNameBytes += b'\x00' * (64 - nameLen)
+            print(sound_size)
+            packet = rqPacket(bytes(12))
+            packet.kind = 1
+            packet.size = 8 + 64 + sound_size
+            code = int(code)
+            packet.mainData = int.to_bytes(code, 8, 'big') + soundNameBytes + sound_file_as_bytes
+            
+            pcSendPacket(the_socket, packet)
+    
+    return output_func
+
+# setup_connection()
+# upload_data({14234: {"Name": "Balls", "Sound": "/Users/gabrielphilippi/5080.wav"}})

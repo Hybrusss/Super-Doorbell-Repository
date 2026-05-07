@@ -41,6 +41,10 @@ def get_file_path(the_element = None, the_holder = None):
 
         return output_func_1
 
+    elif the_element == "222":
+
+        return filedialog.askopenfilename()
+        
     else:
         return output_func_2
     

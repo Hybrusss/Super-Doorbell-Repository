@@ -1,7 +1,7 @@
 import pygame
 from classes import Element, Container
-from functions import empty_function, get_file_path, beautify_path
-from connection import setup_connection, send_packet_data
+from functions import *
+from connection import setup_connection, upload_data
 
 from statics import *
 
@@ -22,7 +22,7 @@ current_container: str = "title"
 # FORMAT: 
 # [CODE] : {"Name"   : name,
 #            "Sound" : sound data in bytes}
-input_codes_data = {}
+input_codes_data = {"123": {"Name": "test", "Sound": "D:/College Stuff/Computer Science/Freshman Year/Q3/superdoorbell/applepay.mp3"}}
 
 
 # this is triggered when the user presses the back button
@@ -44,7 +44,7 @@ def update_codes(screen, container: Container, the_error_object):
             the_error_object.text = "Code must be a number"
             return 
 
-        code = int(code_container.text)
+        code = code_container.text
         if code in input_codes_data:
             the_error_object.text = "Code already in use"
             return
@@ -56,11 +56,11 @@ def update_codes(screen, container: Container, the_error_object):
         
         container_dict[current_container].being_drawn = False
 
-        current_container = "edit"
+        current_container = "codes"
 
         container_dict[current_container].being_drawn = True
 
-        container_dict["edit"] = update_edit_display(screen, last_viewed_page)
+        container_dict["codes"] = update_codes_display(screen, last_viewed_page)
     
     return output_func
 
@@ -110,7 +110,7 @@ def editor_screen_maker(screen: pygame.Surface):
     return code_editor_screen
 
 
-def update_edit_display(screen, page_number: int = None) -> Container:
+def update_codes_display(screen, page_number: int = None) -> Container:
     
     width = screen.get_width()
     height = screen.get_height()
@@ -210,9 +210,9 @@ def update_edit_display(screen, page_number: int = None) -> Container:
     import_codes_button = Element((50, height-150), (300, 100), screen, blue, "Import Data", white)
     export_codes_button = Element((width/2-150, height-150), (300, 100), screen, white, "Export Data", black)
 
-    output_container.add_element(upload_codes_button, send_packet_data)
-    output_container.add_element(import_codes_button, empty_function)
-    output_container.add_element(export_codes_button, empty_function)
+    output_container.add_element(upload_codes_button, upload_data(input_codes_data))
+    output_container.add_element(import_codes_button, get_file_data(screen))
+    output_container.add_element(export_codes_button, save_file_path)
 
     back_button = Element((5, 5), (100, 75), screen, red, "back", black)
     output_container.add_element(back_button, swap_container_constructor("title"))
@@ -233,11 +233,11 @@ def add_code(screen, current_page: int = 1, number: int = 1, name: str = "1", pa
     def output_func():
 
         global input_codes_data
-        code = 0
-        while code in input_codes_data:
+        code = 1
+        while str(code) in input_codes_data:
             code += 1
-        input_codes_data[code] = {"Name": name, "Sound": path}
-        container_dict["edit"] = update_edit_display(screen, current_page)
+        input_codes_data[str(code)] = {"Name": name, "Sound": path}
+        container_dict["codes"] = update_codes_display(screen, current_page)
     
     return output_func
 
@@ -249,7 +249,7 @@ def delete_code_constructor(screen, the_code, page_number):
 
         del input_codes_data[the_code]
         
-        container_dict['edit'] = update_edit_display(screen, page_number)
+        container_dict['codes'] = update_codes_display(screen, page_number)
     
     return output_func
 
@@ -260,14 +260,14 @@ def page_switcher(screen, page_num):
 
     def output_func():
 
-        container_dict["edit"] = update_edit_display(screen, page_num)
+        container_dict["codes"] = update_codes_display(screen, page_num)
     
     return output_func
 
 
 def swap_container_constructor(container_input_value, page_num = None):
 
-    if type(container_input_value) == str:
+    if type(container_input_value) == str and not container_input_value.isdecimal():
 
         def output_func():
             global current_container
@@ -278,7 +278,7 @@ def swap_container_constructor(container_input_value, page_num = None):
 
             container_dict[current_container].being_drawn = True
 
-    elif type(container_input_value) == int:
+    elif container_input_value.isdecimal():
 
         def output_func():
 
@@ -343,7 +343,7 @@ def title_screen_maker(screen):
 
 
     title_screen.add_element(connect_button, setup_connection)
-    title_screen.add_element(edit_button, swap_container_constructor("edit"))
+    title_screen.add_element(edit_button, swap_container_constructor("codes"))
     title_screen.add_element(connection_display, empty_function)
 
     connection_display.set_element_type(False)
@@ -351,3 +351,61 @@ def title_screen_maker(screen):
     title_screen.being_drawn = True
 
     return title_screen
+
+
+
+    
+def save_file_path():
+
+    file = filedialog.asksaveasfile(
+        initialfile='config.dbd',
+        defaultextension=".dbd",
+        filetypes=[("Doorbell Data","*.dbd"), ("All Files","*.*")]
+    )
+    
+    if file:
+        
+        the_data_list = make_file_data(input_codes_data)
+
+        for element in the_data_list:
+
+            file.write(element)
+            if element != the_data_list[-1]:
+                file.write("\n")
+
+        file.close()
+    
+def make_file_data(codes_data):
+    output_list = []
+    for code in codes_data:
+        name = codes_data[code]["Name"]
+        file_path = codes_data[code]["Sound"]
+
+        output_list.append(f"{code}, {name}, {file_path}")
+    
+    return output_list
+    
+def get_file_data(screen):
+
+    def output_func():
+
+        global input_codes_data
+
+        input_path = get_file_path("222")
+
+        output_data = {}
+
+        with open(input_path) as f:
+            for line in f:
+                line = line.strip().split(", ")
+                the_code = line[0]
+                the_name = line[1]
+                the_path = line[2]
+
+                output_data[the_code] = {"Name": the_name, "Sound": the_path}
+        
+        input_codes_data = output_data
+
+        container_dict["codes"] = update_codes_display(screen, 1)
+    
+    return output_func

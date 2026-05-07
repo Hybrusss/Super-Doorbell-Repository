@@ -41,7 +41,7 @@ Running = True # set variable for stopping the loop
 
 screens.container_dict["title"] = screens.title_screen_maker(screen)
 
-screens.container_dict["edit"] = screens.update_edit_display(screen, 1)
+screens.container_dict["codes"] = screens.update_codes_display(screen, 1)
 
 screens.container_dict["editor"] = screens.editor_screen_maker(screen)
 
@@ -51,15 +51,15 @@ pygame.key.set_repeat(350, 35)
 
 connection.setup_connection()
 
-last_keep_alive = time.time()
+# last_keep_alive = time.time()
 
 while Running: # start the loop
 
-    if time.time() - last_keep_alive > 10:
+    # if time.time() - last_keep_alive > 10:
 
-        connection.keep_alive_packet()
+    #     connection.keep_alive_packet()
 
-        last_keep_alive = time.time()
+    #     last_keep_alive = time.time()
 
     screen.fill(grey)
     
