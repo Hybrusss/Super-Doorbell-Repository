@@ -344,7 +344,6 @@ def title_screen_maker(screen):
 
     title_screen.add_element(connect_button, setup_connection)
     title_screen.add_element(edit_button, swap_container_constructor("codes"))
-    title_screen.add_element(connection_display, empty_function)
 
     connection_display.set_element_type(False)
 

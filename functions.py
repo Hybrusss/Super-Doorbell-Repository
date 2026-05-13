@@ -20,7 +20,7 @@ def get_file_path(the_element = None, the_holder = None):
 
         global the_sound_path
 
-        file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\temp sounds")
+        file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\sounds")
 
         the_sound_path = file_path
 
@@ -30,7 +30,7 @@ def get_file_path(the_element = None, the_holder = None):
 
         choosing_file = True
 
-        file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\temp sounds")
+        file_path = filedialog.askopenfilename(initialdir=r"C:\Users\Ryan\Desktop\sounds")
 
         choosing_file = False
 

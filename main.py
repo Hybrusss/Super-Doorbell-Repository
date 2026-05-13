@@ -51,15 +51,15 @@ pygame.key.set_repeat(350, 35)
 
 connection.setup_connection()
 
-# last_keep_alive = time.time()
+last_keep_alive = time.time()
 
 while Running: # start the loop
 
-    # if time.time() - last_keep_alive > 10:
+    if time.time() - last_keep_alive > 10:
 
-    #     connection.keep_alive_packet()
+        connection.keep_alive_packet()
 
-    #     last_keep_alive = time.time()
+        last_keep_alive = time.time()
 
     screen.fill(grey)
     
