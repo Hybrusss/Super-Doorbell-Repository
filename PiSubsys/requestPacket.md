@@ -15,7 +15,7 @@ The remaining bytes are the actual object being sent over the network.
 
 1: Doorbell Pin Add; the size should indicate how large the sound file is plus the size of its name and the pin associated with it. Returns whether or not the pin was added in a Status Packet.
 
-2: Doorbell Pin Remove; the size should be how large the pin integer is. Returns whether or not the pin was removed in a Status Packet.
+2: Doorbell Remove all pins; removes all pins from the doorbell and wipes the code file. Should return Success.
 
 3: Import; the size should specify how large the code file is being sent. Returns a Status Packet.
 
