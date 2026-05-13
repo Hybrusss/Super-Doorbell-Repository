@@ -17,6 +17,9 @@ class rqPacket:
 
 	@property
 	def kind(self) -> int:
+		'''
+		The kind of the packet; defined in requestPacket.md
+		'''
 		return int.from_bytes(self._data[0:4], 'big')
 	
 	@kind.setter
@@ -26,6 +29,9 @@ class rqPacket:
 
 	@property
 	def size(self) -> int:
+		'''
+		The size of mainData. Used to receive the packet in full.
+		'''
 		return int.from_bytes(self._data[4:12], 'big')
 	
 	@size.setter
@@ -35,6 +41,9 @@ class rqPacket:
 	
 	@property
 	def mainData(self) -> bytes:
+		'''
+		The actual data portion of the packet minus the header.
+		'''
 		return self._data[12:self.size - 12]
 	
 	@mainData.setter
@@ -43,6 +52,9 @@ class rqPacket:
 			
 	@property
 	def backingData(self) -> bytes:
+		'''
+		The entire packet including the data header and data itself as bytes.
+		'''
 		return self._data
 	
 	@backingData.setter
@@ -50,6 +62,8 @@ class rqPacket:
 		self._data = data
 
 def _broadcastThread():
+	# Allows computers on the local network to discover the doorbell and
+	# connect to it.
 	interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None,
 								family=socket.AF_INET, type=socket.SOCK_DGRAM)
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 
@@ -68,6 +82,7 @@ def _broadcastThread():
 	serverSocket.close()
 
 def _runtimeServerThread():
+	# Accepts incomming packets from connected computers
 	runtimeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	runtimeSocket.bind(("0.0.0.0", RTS_PORT))
 	while webRunning:
@@ -84,22 +99,27 @@ def _runtimeServerThread():
 				retPacket = rqPacket(bytes(PACKET_MAX))
 				status = 0
 
+				# If the packet size is zero, reject the connection
 				if getPacket.size == 0:
 					connection.close()
 					break
 				
+				# Receive the entire packet by iterating until the size matches
 				lastSize = getPacket.size - len(getPacket.mainData)
 				while getPacket.size != len(getPacket.mainData):
 					getPacket.mainData += connection.recv(PACKET_MAX)
-					if lastSize == 24:
+					if lastSize == 24: # The pi only accepts until this ammount for some reason
 						break
 					if getPacket.size - len(getPacket.mainData) == lastSize:
 						break
 					lastSize = getPacket.size - len(getPacket.mainData)
 				
+				# Debug printing
 				print(getPacket.kind)
 				print(getPacket.size)
-				if getPacket.kind == 1:
+
+				# Determine the type of the packet
+				if getPacket.kind == 1: # A sound file and pin number are being sent
 					if getPacket.size < 72:
 						status = codeAPI.UNK_FAIL
 					else:	
@@ -109,6 +129,7 @@ def _runtimeServerThread():
 							idx = 0
 							while rawName[idx] != 0 and idx < 64:
 								idx += 1
+							# Store the sound as the name provided
 							soundName = bytes.decode(rawName[0:idx], 'utf-8')
 							soundName.strip()
 							fileBytes = getPacket.mainData[72:-1]
@@ -117,18 +138,18 @@ def _runtimeServerThread():
 						except Exception as ex:
 							print(ex)
 							status = codeAPI.UNK_FAIL
-				elif getPacket.kind == 2:
+				elif getPacket.kind == 2: # Clear all of the codes
 					if getPacket.size < 1:
 						status = codeAPI.UNK_FAIL
 					else:
 						status = codeAPI.delCodes()
-				elif getPacket.kind == 3:
+				elif getPacket.kind == 3:  # Unused -- import a pin file
 					if getPacket.size == 0:
 						status = codeAPI.IMP_FAIL
 					else:
 						status = codeAPI.importCodesFile(
 							getPacket.mainData[0:getPacket.size])
-				if getPacket.kind == 4: # special case
+				if getPacket.kind == 4: # Unused -- export a pin file
 					fileBytes = codeAPI.exportCodesFile()
 					if fileBytes == None:
 						retPacket.size = 1
@@ -137,7 +158,7 @@ def _runtimeServerThread():
 						retPacket.size = len(fileBytes)
 						retPacket.mainData = fileBytes
 					retPacket.kind = 4
-				else:
+				else: # Return the status packet to confirm
 					retPacket.kind = 0
 					retPacket.size = 4
 					retPacket.mainData = int.to_bytes(status, 4)
@@ -146,7 +167,6 @@ def _runtimeServerThread():
 			except Exception as h:
 				print(h)
 				break
-			connection.close()
 		print("Severed connection to " + addr[0])
 	runtimeSocket.close()
 
