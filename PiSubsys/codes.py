@@ -41,7 +41,7 @@ class code:
 			
 		fileHandle.close()
 
-	def createListFromFile(file:str) -> list[code]:
+	def createListFromFile(file:str) -> list:
 		# The files for the doorbell program will be stored in the home folder
 		fileHandle = open(f"{Path.home()}/doorbell/settings/" + file, "br")
 		contents = fileHandle.read()
@@ -77,8 +77,5 @@ class code:
 
 
 		fileHandle.close()
-		return
+		return codes
 
-# Tests
-code.createFileFromList("testFile.set", [code(1234, "file.ogg"), code(4321, "honk.ogg")])
-code.createListFromFile("testFile.set")
