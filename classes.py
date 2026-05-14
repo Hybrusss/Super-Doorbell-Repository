@@ -227,7 +227,7 @@ class Element:
 
 
 
-# effectively a different "screen",
+# effectively a different screen/display,
 # holds different elements and can be
 # switched between by pressing certain
 # buttons
